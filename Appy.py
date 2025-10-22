@@ -89,6 +89,44 @@ if option == "📝 Adaugă Runde":
         total_rounds = len(st.session_state.rounds)
         st.subheader(f"📊 Total Runde Salvate: {total_rounds}")
         
+        # Buton de extragere direct aici
+        col_extract1, col_extract2, col_extract3 = st.columns([1, 1, 3])
+        
+        with col_extract1:
+            if st.button("🔍 Extrage Numerele", type="primary"):
+                # Creare listă cu toate numerele
+                all_numbers = []
+                for round_data in st.session_state.rounds:
+                    all_numbers.append(round_data['Numere'])
+                
+                # Salvare în session state pentru afișare
+                st.session_state.extracted_numbers = "\n".join(all_numbers)
+                st.session_state.show_extraction = True
+        
+        with col_extract2:
+            if st.button("❌ Ascunde Extragere"):
+                st.session_state.show_extraction = False
+        
+        # Afișare numere extrase dacă există
+        if hasattr(st.session_state, 'show_extraction') and st.session_state.show_extraction:
+            st.divider()
+            st.success(f"✅ Toate cele {total_rounds} seturi de numere au fost extrase!")
+            
+            st.text_area(
+                f"Numerele extrase ({total_rounds} runde):",
+                value=st.session_state.extracted_numbers,
+                height=300
+            )
+            
+            st.download_button(
+                label=f"📥 Descarcă Numerele ({total_rounds} runde)",
+                data=st.session_state.extracted_numbers.encode('utf-8'),
+                file_name="numere_extrase.txt",
+                mime="text/plain",
+            )
+        
+        st.divider()
+        
         # Afișare TOATE rundele
         df_all = pd.DataFrame(st.session_state.rounds)
         st.dataframe(df_all, use_container_width=True, hide_index=True)
