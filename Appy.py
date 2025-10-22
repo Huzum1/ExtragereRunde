@@ -83,29 +83,19 @@ if option == "📝 Adaugă Runde":
                 st.session_state.rounds = []
                 st.rerun()
     
-    # Afișare număr de runde
+    # Afișare toate rundele
     if st.session_state.rounds:
         st.divider()
         total_rounds = len(st.session_state.rounds)
         st.subheader(f"📊 Total Runde Salvate: {total_rounds}")
         
-        # Afișare primele 10 runde ca preview
-        st.write("**Preview (primele 10 runde):**")
-        df_preview = pd.DataFrame(st.session_state.rounds[:10])
-        st.dataframe(df_preview, use_container_width=True, hide_index=True)
-        
-        if total_rounds > 10:
-            st.info(f"✅ {total_rounds - 10} runde suplimentare salvate (nu sunt afișate în preview)")
-        
-        # Buton pentru a vedea toate rundele
-        if st.checkbox("📋 Arată toate rundele în tabel"):
-            df_all = pd.DataFrame(st.session_state.rounds)
-            st.dataframe(df_all, use_container_width=True, hide_index=True)
+        # Afișare TOATE rundele
+        df_all = pd.DataFrame(st.session_state.rounds)
+        st.dataframe(df_all, use_container_width=True, hide_index=True)
         
         # Buton export CSV
         col_export1, col_export2 = st.columns([1, 4])
         with col_export1:
-            df_all = pd.DataFrame(st.session_state.rounds)
             csv = df_all.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label=f"📥 Descarcă toate ({total_rounds} runde)",
@@ -123,11 +113,6 @@ elif option == "🎯 Extrage Numere":
     else:
         total_rounds = len(st.session_state.rounds)
         st.write(f"**Total runde disponibile: {total_rounds}**")
-        
-        # Opțiune de a vedea toate rundele înainte de extragere
-        if st.checkbox("📋 Arată tabelul cu toate rundele"):
-            df_all = pd.DataFrame(st.session_state.rounds)
-            st.dataframe(df_all, use_container_width=True, hide_index=True)
         
         st.divider()
         
@@ -168,29 +153,6 @@ elif option == "🎯 Extrage Numere":
                     file_name="numere_extrase.txt",
                     mime="text/plain",
                 )
-            
-            # Preview primele 10 runde
-            st.divider()
-            st.write("**Preview (primele 10 seturi de numere):**")
-            
-            preview_count = min(10, len(all_numbers))
-            for idx in range(preview_count):
-                numbers = all_numbers[idx]
-                st.markdown(f"""
-                <div style="
-                    background-color: #f0f2f6;
-                    padding: 15px;
-                    border-radius: 8px;
-                    margin: 10px 0;
-                    font-size: 18px;
-                    font-weight: bold;
-                ">
-                    Rundă #{idx + 1}: {numbers}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            if len(all_numbers) > preview_count:
-                st.info(f"✅ ... și încă {len(all_numbers) - preview_count} seturi de numere (vezi în text area de mai sus)")
 
 # Footer
 st.divider()
