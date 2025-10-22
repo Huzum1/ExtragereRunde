@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import re
 
 # Configurare pagină
 st.set_page_config(page_title="Generator Numere", page_icon="🎲", layout="wide")
@@ -20,84 +19,94 @@ option = st.sidebar.selectbox(
 
 # ========== OPȚIUNEA 1: ADAUGĂ RUNDE ==========
 if option == "📝 Adaugă Runde":
-    st.header("Adaugă Runde Noi")
+    st.header("Adaugă Runde")
     
-    st.write("**Formatul rundei:**")
-    st.code("3856673	22. 10. 2025	4:29	24, 16, 8, 29, 56, 27, 63, 2, 64, 30, 1, 66")
+    st.write("**Lipește rundele aici (câte una pe linie):**")
+    st.code("3856671	22. 10. 2025	4:27	36, 52, 22, 47, 2, 50, 62, 63, 21, 10, 54, 34")
     
-    # Input pentru rundă
-    round_input = st.text_area(
-        "Lipește runda aici:",
-        placeholder="3856673	22. 10. 2025	4:29	24, 16, 8, 29, 56, 27, 63, 2, 64, 30, 1, 66",
-        height=100
+    # Text area mare pentru multiple runde
+    rounds_input = st.text_area(
+        "Lipește toate rundele (poți adăuga 500-5000 runde):",
+        placeholder="3856671	22. 10. 2025	4:27	36, 52, 22, 47, 2, 50, 62, 63, 21, 10, 54, 34\n3856672	22. 10. 2025	4:28	15, 30, 45, 60, 12, 24, 36, 48, 3, 6, 9, 18",
+        height=300
     )
     
     col1, col2, col3 = st.columns([1, 1, 3])
     
     with col1:
-        if st.button("➕ Adaugă Rundă", type="primary"):
-            if round_input.strip():
-                try:
-                    # Split by tab
-                    parts = round_input.strip().split('\t')
-                    
-                    if len(parts) >= 4:
-                        round_id = parts[0].strip()
-                        round_date = parts[1].strip()
-                        round_time = parts[2].strip()
-                        numbers = parts[3].strip()
-                        
-                        # Creare rundă
-                        round_data = {
-                            'Id': round_id,
-                            'Data': round_date,
-                            'Ora': round_time,
-                            'Numere': numbers
-                        }
-                        
-                        # Adăugare în session state
-                        st.session_state.rounds.append(round_data)
-                        
-                        st.success(f"✅ Rundă {round_id} adăugată!")
-                        st.rerun()
-                    else:
-                        st.error("⚠️ Formatul nu este corect!")
-                except Exception as e:
-                    st.error(f"⚠️ Eroare: {str(e)}")
+        if st.button("➕ Adaugă Rundele", type="primary"):
+            if rounds_input.strip():
+                lines = rounds_input.strip().split('\n')
+                added_count = 0
+                error_count = 0
+                
+                for line in lines:
+                    if line.strip():
+                        try:
+                            # Split by tab
+                            parts = line.strip().split('\t')
+                            
+                            if len(parts) >= 4:
+                                round_id = parts[0].strip()
+                                round_date = parts[1].strip()
+                                round_time = parts[2].strip()
+                                numbers = parts[3].strip()
+                                
+                                # Creare rundă
+                                round_data = {
+                                    'Id': round_id,
+                                    'Data': round_date,
+                                    'Ora': round_time,
+                                    'Numere': numbers
+                                }
+                                
+                                # Adăugare în session state
+                                st.session_state.rounds.append(round_data)
+                                added_count += 1
+                            else:
+                                error_count += 1
+                        except Exception as e:
+                            error_count += 1
+                
+                if added_count > 0:
+                    st.success(f"✅ {added_count} runde adăugate cu succes!")
+                if error_count > 0:
+                    st.warning(f"⚠️ {error_count} runde nu au putut fi adăugate (format incorect)")
+                
+                st.rerun()
             else:
-                st.error("⚠️ Te rog introdu o rundă!")
+                st.error("⚠️ Te rog introdu cel puțin o rundă!")
     
     with col2:
         if st.session_state.rounds:
-            if st.button("🗑️ Șterge Ultima"):
-                st.session_state.rounds.pop()
-                st.rerun()
-    
-    # Afișare runde
-    if st.session_state.rounds:
-        st.divider()
-        st.subheader(f"📊 Rundele Tale ({len(st.session_state.rounds)} runde)")
-        
-        # Creare DataFrame
-        df = pd.DataFrame(st.session_state.rounds)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        
-        # Butoane export și ștergere
-        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 3])
-        
-        with col_btn1:
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Descarcă CSV",
-                data=csv,
-                file_name="runde.csv",
-                mime="text/csv",
-            )
-        
-        with col_btn2:
             if st.button("🗑️ Șterge Tot"):
                 st.session_state.rounds = []
                 st.rerun()
+    
+    # Afișare număr de runde
+    if st.session_state.rounds:
+        st.divider()
+        st.subheader(f"📊 Total Runde: {len(st.session_state.rounds)}")
+        
+        # Afișare primele 10 runde ca preview
+        st.write("**Preview (primele 10 runde):**")
+        df_preview = pd.DataFrame(st.session_state.rounds[:10])
+        st.dataframe(df_preview, use_container_width=True, hide_index=True)
+        
+        if len(st.session_state.rounds) > 10:
+            st.info(f"... și încă {len(st.session_state.rounds) - 10} runde")
+        
+        # Buton export CSV
+        col_export1, col_export2 = st.columns([1, 4])
+        with col_export1:
+            df_all = pd.DataFrame(st.session_state.rounds)
+            csv = df_all.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Descarcă toate rundele (CSV)",
+                data=csv,
+                file_name="runde_complete.csv",
+                mime="text/csv",
+            )
 
 # ========== OPȚIUNEA 2: EXTRAGE NUMERE ==========
 elif option == "🎯 Extrage Numere":
@@ -108,69 +117,59 @@ elif option == "🎯 Extrage Numere":
     else:
         st.write(f"**Total runde disponibile: {len(st.session_state.rounds)}**")
         
-        # Tabel cu rundele
         st.divider()
-        st.subheader("📋 Rundele Tale")
-        
-        df = pd.DataFrame(st.session_state.rounds)
-        st.dataframe(df, use_container_width=True, hide_index=True)
         
         # Buton de extragere
-        st.divider()
-        st.subheader("🎯 Extragere Numere")
-        
         if st.button("🔍 Extrage Numerele", type="primary", use_container_width=False):
-            st.success("✅ Numere extrase cu succes!")
+            st.success(f"✅ {len(st.session_state.rounds)} seturi de numere extrase!")
             
             st.divider()
+            st.subheader("📋 Numerele Extrase")
             
-            # Afișare numere pentru fiecare rundă
-            for idx, round_data in enumerate(st.session_state.rounds, 1):
-                st.markdown(f"**Rundă #{idx}** (ID: {round_data['Id']})")
-                
-                numbers = round_data['Numere']
-                
-                # Afișare în cutie mare
-                st.markdown(f"""
-                <div style="
-                    background-color: #f0f2f6;
-                    padding: 20px;
-                    border-radius: 10px;
-                    font-size: 20px;
-                    font-weight: bold;
-                    margin: 10px 0;
-                ">
-                    {numbers}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Cod pentru copy-paste
-                st.code(numbers, language=None)
-                
-                st.markdown("---")
+            # Creare listă cu toate numerele
+            all_numbers = []
+            for round_data in st.session_state.rounds:
+                all_numbers.append(round_data['Numere'])
             
-            # Export toate numerele
-            st.divider()
-            st.subheader("📥 Export Toate Numerele")
+            # Afișare în text area mare
+            numbers_text = "\n".join(all_numbers)
             
-            all_numbers = "\n".join([round_data['Numere'] for round_data in st.session_state.rounds])
+            st.text_area(
+                f"Toate numerele ({len(all_numbers)} runde):",
+                value=numbers_text,
+                height=400
+            )
             
-            col_export1, col_export2 = st.columns([4, 1])
-            
-            with col_export1:
-                st.text_area(
-                    "Toate numerele (câte o rundă pe linie):",
-                    value=all_numbers,
-                    height=200
-                )
-            
-            with col_export2:
+            # Buton descărcare
+            col_download1, col_download2 = st.columns([1, 4])
+            with col_download1:
                 st.download_button(
-                    label="📥 Descarcă TXT",
-                    data=all_numbers.encode('utf-8'),
+                    label="📥 Descarcă Numerele (TXT)",
+                    data=numbers_text.encode('utf-8'),
                     file_name="numere_extrase.txt",
                     mime="text/plain",
                 )
+            
+            # Preview primele 5 runde
+            st.divider()
+            st.write("**Preview (primele 5 seturi de numere):**")
+            
+            for idx, numbers in enumerate(all_numbers[:5], 1):
+                st.markdown(f"""
+                <div style="
+                    background-color: #f0f2f6;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 10px 0;
+                    font-size: 18px;
+                    font-weight: bold;
+                ">
+                    Rundă #{idx}: {numbers}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            if len(all_numbers) > 5:
+                st.info(f"... și încă {len(all_numbers) - 5} seturi de numere")
 
 # Footer
 st.divider()
