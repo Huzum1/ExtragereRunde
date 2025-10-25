@@ -21,13 +21,13 @@ option = st.sidebar.selectbox(
 if option == "📝 Adaugă Runde":
     st.header("Adaugă Runde")
     
-    st.write("**Lipește rundele aici (câte una pe linie):**")
-    st.code("3856671	22. 10. 2025	4:27	36, 52, 22, 47, 2, 50, 62, 63, 21, 10, 54, 34")
+    st.write("**Lipește rundele aici (acceptă ambele formate):**")
+    st.code("Format 1 (orizontal):\n3856671\t22. 10. 2025\t4:27\t36, 52, 22, 47, 2, 50, 62, 63, 21, 10, 54, 34\n\nFormat 2 (vertical):\n3852068\n18. 10. 2025\n23:20\n5, 38, 30, 42, 4, 62, 14, 20, 41, 16, 34, 9")
     
     # Text area mare pentru multiple runde
     rounds_input = st.text_area(
-        "Lipește toate rundele (poți adăuga 500-5000 runde):",
-        placeholder="3856671	22. 10. 2025	4:27	36, 52, 22, 47, 2, 50, 62, 63, 21, 10, 54, 34\n3856672	22. 10. 2025	4:28	15, 30, 45, 60, 12, 24, 36, 48, 3, 6, 9, 18",
+        "Lipește toate rundele (ambele formate acceptate):",
+        placeholder="Format orizontal:\n3856671\t22. 10. 2025\t4:27\t36, 52, 22, 47, 2, 50\n\nFormat vertical:\n3852068\n18. 10. 2025\n23:20\n5, 38, 30, 42, 4, 62",
         height=300
     )
     
@@ -40,33 +40,73 @@ if option == "📝 Adaugă Runde":
                 added_count = 0
                 error_count = 0
                 
-                for line in lines:
-                    if line.strip():
+                i = 0
+                while i < len(lines):
+                    line = lines[i].strip()
+                    
+                    if line:
                         try:
-                            # Split by tab
-                            parts = line.strip().split('\t')
-                            
-                            if len(parts) >= 4:
-                                round_id = parts[0].strip()
-                                round_date = parts[1].strip()
-                                round_time = parts[2].strip()
-                                numbers = parts[3].strip()
+                            # Verifică dacă linia conține tab (format orizontal)
+                            if '\t' in line:
+                                # Format orizontal: tab-separated
+                                parts = line.split('\t')
                                 
-                                # Creare rundă
-                                round_data = {
-                                    'Id': round_id,
-                                    'Data': round_date,
-                                    'Ora': round_time,
-                                    'Numere': numbers
-                                }
-                                
-                                # Adăugare în session state
-                                st.session_state.rounds.append(round_data)
-                                added_count += 1
+                                if len(parts) >= 4:
+                                    round_id = parts[0].strip()
+                                    round_date = parts[1].strip()
+                                    round_time = parts[2].strip()
+                                    numbers = parts[3].strip()
+                                    
+                                    # Creare rundă
+                                    round_data = {
+                                        'Id': round_id,
+                                        'Data': round_date,
+                                        'Ora': round_time,
+                                        'Numere': numbers
+                                    }
+                                    
+                                    st.session_state.rounds.append(round_data)
+                                    added_count += 1
+                                else:
+                                    error_count += 1
+                                i += 1
                             else:
-                                error_count += 1
+                                # Format vertical: 4 linii consecutive pentru o rundă
+                                if i + 3 < len(lines):
+                                    round_id = lines[i].strip()
+                                    round_date = lines[i + 1].strip()
+                                    round_time = lines[i + 2].strip()
+                                    numbers = lines[i + 3].strip()
+                                    
+                                    # Verifică că avem date valide și că numerele conțin virgule
+                                    if round_id and round_date and round_time and numbers and ',' in numbers:
+                                        round_data = {
+                                            'Id': round_id,
+                                            'Data': round_date,
+                                            'Ora': round_time,
+                                            'Numere': numbers
+                                        }
+                                        
+                                        st.session_state.rounds.append(round_data)
+                                        added_count += 1
+                                        i += 4  # Sări peste cele 4 linii
+                                        
+                                        # Sări peste linii goale după rundă
+                                        while i < len(lines) and not lines[i].strip():
+                                            i += 1
+                                    else:
+                                        error_count += 1
+                                        i += 1
+                                else:
+                                    # Nu mai sunt suficiente linii pentru o rundă completă
+                                    error_count += 1
+                                    i += 1
                         except Exception as e:
                             error_count += 1
+                            i += 1
+                    else:
+                        # Linie goală, treci peste
+                        i += 1
                 
                 if added_count > 0:
                     st.success(f"✅ {added_count} runde adăugate cu succes!")
